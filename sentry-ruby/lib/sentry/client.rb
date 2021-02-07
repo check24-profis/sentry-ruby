@@ -52,6 +52,9 @@ module Sentry
       end
 
       event
+    rescue Sentry::Error => e
+      configuration.logger.error(LOGGER_PROGNAME) { "event sending failed: #{e.message}" }
+      event
     end
 
     def event_from_exception(exception, hint = {})

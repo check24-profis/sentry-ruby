@@ -138,6 +138,16 @@ RSpec.describe Sentry::Client do
 
           expect(transport.events.count).to eq(1)
         end
+
+        context "when there's a Sentry::Error" do
+          before do
+            expect(subject.transport).to receive(:send_event).and_raise(Sentry::Error.new("networking error"))
+          end
+
+          it "swallows the error" do
+            expect(subject.capture_event(event, scope, { background: false })).to eq(event)
+          end
+        end
       end
     end
   end
@@ -150,12 +160,20 @@ RSpec.describe Sentry::Client do
       subject.event_from_transaction(Sentry::Transaction.new)
     end
 
-    before do
-      expect(subject.transport).to receive(:send_event).with(event)
-    end
-
     shared_examples "Event in send_event" do
+      context "when there's an exception" do
+        before do
+          expect(subject.transport).to receive(:send_event).and_raise(Sentry::Error.new("networking error"))
+        end
+
+        it "raises the error" do
+          expect do
+            subject.send_event(event)
+          end.to raise_error(Sentry::Error, "networking error")
+        end
+      end
       it "sends data through the transport" do
+        expect(subject.transport).to receive(:send_event).with(event)
         subject.send_event(event)
       end
 

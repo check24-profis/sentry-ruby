@@ -121,24 +121,46 @@ RSpec.describe Sentry::Transport do
     end
 
     context "when failed" do
-      before do
-        allow(subject).to receive(:send_data).and_raise(StandardError)
+      context "with normal error" do
+        before do
+          allow(subject).to receive(:send_data).and_raise(StandardError)
+        end
+
+        it "returns nil" do
+          expect(subject.send_event(event)).to eq(nil)
+        end
+
+        it "logs correct message" do
+          subject.send_event(event)
+
+          log = io.string
+          expect(log).to match(
+            /WARN -- sentry: Unable to record event with remote Sentry server \(StandardError - StandardError\):/
+          )
+          expect(log).to match(
+            /WARN -- sentry: Failed to submit event. Unreported Event: ZeroDivisionError: divided by 0/
+          )
+        end
       end
 
-      it "returns nil" do
-        expect(subject.send_event(event)).to eq(nil)
-      end
+      context "with Faraday::Error" do
+        before do
+          allow(subject).to receive(:send_data).and_raise(Sentry::Error.new("networking error"))
+        end
 
-      it "logs correct message" do
-        subject.send_event(event)
+        it "raises the error and logs the correct message" do
+          expect do
+            subject.send_event(event)
+          end.to raise_error(Sentry::Error)
 
-        log = io.string
-        expect(log).to match(
-          /WARN -- sentry: Unable to record event with remote Sentry server \(StandardError - StandardError\):/
-        )
-        expect(log).to match(
-          /WARN -- sentry: Failed to submit event. Unreported Event: ZeroDivisionError: divided by 0/
-        )
+          log = io.string
+          expect(log).to match(
+            /WARN -- sentry: Unable to record event with remote Sentry server \(Sentry::Error - networking error\):/
+          )
+          expect(log).to match(
+            /WARN -- sentry: Failed to submit event. Unreported Event: ZeroDivisionError: divided by 0/
+          )
+        end
       end
     end
   end

@@ -31,6 +31,9 @@ module Sentry
       send_data(encoded_data)
 
       event
+    rescue Sentry::Error => e
+      failed_for_exception(e, event)
+      raise e
     rescue => e
       failed_for_exception(e, event)
       nil
