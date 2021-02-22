@@ -4,11 +4,12 @@ require 'etc'
 module Raven
   class Context
     def self.current
-      Thread.current[:sentry_context] ||= new
+      Thread.current.thread_variable_get(:sentry_context) ||
+        Thread.current.thread_variable_set(:sentry_context, new)
     end
 
     def self.clear!
-      Thread.current[:sentry_context] = nil
+      Thread.current.thread_variable_set(:sentry_context, nil)
     end
 
     attr_accessor :transaction, :extra, :server_os, :rack_env, :runtime, :tags, :user

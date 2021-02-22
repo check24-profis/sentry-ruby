@@ -31,11 +31,12 @@ module Raven
     attr_accessor :buffer
 
     def self.current
-      Thread.current[:sentry_breadcrumbs] ||= new
+      Thread.current.thread_variable_get(:sentry_breadcrumbs) ||
+        Thread.current.thread_variable_set(:sentry_breadcrumbs, new)
     end
 
     def self.clear!
-      Thread.current[:sentry_breadcrumbs] = nil
+      Thread.current.thread_variable_set(:sentry_breadcrumbs, nil)
     end
 
     def initialize(size = 100)

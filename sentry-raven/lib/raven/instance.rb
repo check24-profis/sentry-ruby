@@ -130,7 +130,7 @@ module Raven
         else
           send_event(evt, make_hint(obj))
         end
-        Thread.current["sentry_#{object_id}_last_event_id".to_sym] = evt.id
+        Thread.current.thread_variable_set("sentry_#{object_id}_last_event_id".to_sym, evt.id)
         evt
       end
     end
@@ -139,7 +139,7 @@ module Raven
     alias capture_exception capture_type
 
     def last_event_id
-      Thread.current["sentry_#{object_id}_last_event_id".to_sym]
+      Thread.current.thread_variable_get("sentry_#{object_id}_last_event_id".to_sym)
     end
 
     # Provides extra context to the exception prior to it being handled by
